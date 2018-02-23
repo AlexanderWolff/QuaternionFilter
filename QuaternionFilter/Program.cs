@@ -15,7 +15,7 @@ namespace QuaternionFilter
 
             
 
-            var filter = new Filter(@"C:\Users\Alexander Wolff\Documents\GitHub\Calibration Program\raw_data\Alex\brush\processed2.csv",
+            var filter = new Filter(@"C:\Users\Alexander Wolff\Documents\GitHub\Calibration Program\raw_data\Alex\brush\input.csv",
                                     @"C:\Users\Alexander Wolff\Documents\GitHub\Calibration Program\raw_data\Alex\brush\filtered.csv");
 
             Console.WriteLine("PROGRAM END");
@@ -28,7 +28,7 @@ namespace QuaternionFilter
 
     class Filter
     {
-        public Filter(string inpath, string outpath, int window_size = 10)
+        public Filter(string inpath, string outpath, int window_size = 10, int ignore_lines = 100)
         {
             //LOAD
             var input_data = read_file(inpath);
@@ -36,12 +36,15 @@ namespace QuaternionFilter
             //SEGMENT
             var segmented = segment_events(input_data);
 
+            //FILTER
             List<float[][]> output = new List<float[][]>();
-
-            foreach(var segment in segmented)
+            foreach (var segment in segmented)
             {
                 output.Add(filter_section(segment, window_size));
             }
+
+            //IGNORE LINES
+            output[0] = ignore_calibration_lines(output[0], ignore_lines);
 
             //RECONSTRUCT
             var repeat_event_format = File.ReadAllLines(inpath)[copy_repeat_event(input_data, 10)];
@@ -345,6 +348,18 @@ namespace QuaternionFilter
             }
 
             return merged.ToArray();
+        }
+
+        static float[][] ignore_calibration_lines(float[][] data, int ignore_lines)
+        {
+            List<float[]> trimmed_data = new List<float[]>();
+
+            for (int i = ignore_lines; i < data.Length; i++)
+            {
+                trimmed_data.Add(data[i]);
+            }
+
+            return trimmed_data.ToArray();
         }
 
         //WRITE
